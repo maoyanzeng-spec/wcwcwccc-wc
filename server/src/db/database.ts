@@ -67,6 +67,7 @@ db.exec(`
 // Migrations (safe to re-run)
 try { db.exec("ALTER TABLE matches ADD COLUMN tournament TEXT DEFAULT '2026'"); } catch {}
 try { db.exec("ALTER TABLE rooms ADD COLUMN tournament TEXT DEFAULT '2026'"); } catch {}
+try { db.exec("ALTER TABLE rooms ADD COLUMN description TEXT"); } catch {}
 try { db.exec("ALTER TABLE matches ADD COLUMN winner_team TEXT"); } catch {}
 try { db.exec("ALTER TABLE bonus_questions ADD COLUMN bracket_groups TEXT"); } catch {}
 

@@ -67,4 +67,5 @@ export interface Session {
   nickname: string;
   roomId: number;
   tournament: '2022' | '2026';
+  description: string | null;
 }

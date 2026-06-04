@@ -32,7 +32,12 @@ export default function RoomPage() {
             {session.code}
           </span>
         </div>
-        <p className="text-sm text-gray-500 mb-4">Hallo, {session.nickname}!</p>
+        <p className="text-sm text-gray-500 mb-2">Hallo, {session.nickname}!</p>
+        {session.description && (
+          <p className="text-sm text-gray-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2 mb-4 italic">
+            {session.description}
+          </p>
+        )}
 
         <button
           onClick={copyInvite}

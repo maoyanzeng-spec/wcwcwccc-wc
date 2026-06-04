@@ -12,6 +12,7 @@ export default function HomePage() {
   const [mode, setMode] = useState<Mode>(urlCode ? 'join' : 'home');
   const [tournament, setTournament] = useState<Tournament>('2026');
   const [bonusTypes, setBonusTypes] = useState(['SEMI_FINALIST', 'FINALIST', 'CHAMPION']);
+  const [description, setDescription] = useState('');
   const [roomName, setRoomName] = useState('');
   const [nickname, setNickname] = useState('');
   const [joinCode, setJoinCode] = useState(urlCode ?? '');
@@ -28,7 +29,7 @@ export default function HomePage() {
     if (!roomName.trim() || !nickname.trim()) return setError('Bitte Raumname und Spitzname eingeben');
     setLoading(true); setError('');
     try {
-      const { data } = await api.post('/rooms', { roomName, nickname, tournament, bonusTypes });
+      const { data } = await api.post('/rooms', { roomName, nickname, tournament, bonusTypes, description });
       setSession(data);
       navigate('/matches');
     } catch (e: any) {
@@ -172,12 +173,21 @@ export default function HomePage() {
               onChange={(e) => setRoomName(e.target.value)}
             />
             <input
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="Dein Spitzname"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             />
+            <div className="relative mb-4">
+              <textarea
+                className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                placeholder="Beschreibung (optional) – z.B.: Die letzten 3 zahlen ein Abendessen 🍕"
+                value={description}
+                onChange={(e) => setDescription(e.target.value.slice(0, 200))}
+                rows={3}
+              />
+              <span className="absolute bottom-2 right-3 text-xs text-gray-300">{description.length}/200</span>
+            </div>
             {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
             <button
               onClick={handleCreate}

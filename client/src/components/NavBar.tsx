@@ -42,7 +42,9 @@ export default function NavBar() {
   }
 
   function getInviteText() {
-    return `🏆 Komm in meine WM-Tipp Runde "${session!.roomName}"! Einladungscode: ${session!.code}`;
+    const base = `🏆 Komm in meine WM-Tipp Runde "${session!.roomName}"!`;
+    const desc = session!.description ? `\n\n${session!.description}` : '';
+    return `${base}${desc}\n\nEinladungscode: ${session!.code}`;
   }
 
   function copyLink() {

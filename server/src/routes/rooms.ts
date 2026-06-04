@@ -14,7 +14,7 @@ function generateCode(): string {
 
 // POST /api/rooms — create room + register creator
 router.post('/', (req: Request, res: Response) => {
-  const { roomName, nickname, tournament = '2026', bonusTypes = ['SEMI_FINALIST', 'FINALIST', 'CHAMPION'] } = req.body;
+  const { roomName, nickname, tournament = '2026', bonusTypes = ['SEMI_FINALIST', 'FINALIST', 'CHAMPION'], description = '' } = req.body;
   if (!roomName?.trim() || !nickname?.trim()) {
     return res.status(400).json({ error: 'Raumname und Spitzname dürfen nicht leer sein' });
   }
@@ -33,8 +33,8 @@ router.post('/', (req: Request, res: Response) => {
   db.exec('BEGIN');
   try {
     const { lastInsertRowid } = db
-      .prepare('INSERT INTO rooms (code, name, tournament) VALUES (?, ?, ?)')
-      .run(code, roomName.trim(), tournament);
+      .prepare('INSERT INTO rooms (code, name, tournament, description) VALUES (?, ?, ?, ?)')
+      .run(code, roomName.trim(), tournament, description.trim().slice(0, 200) || null);
     roomId = Number(lastInsertRowid);
     db.prepare('INSERT INTO users (nickname, room_id, token) VALUES (?, ?, ?)').run(
       nickname.trim(), roomId, token
@@ -77,7 +77,7 @@ router.post('/', (req: Request, res: Response) => {
     db.exec('ROLLBACK');
     return res.status(500).json({ error: 'Raum konnte nicht erstellt werden' });
   }
-  res.json({ token, code, roomName: roomName.trim(), nickname: nickname.trim(), roomId: roomId!, tournament });
+  res.json({ token, code, roomName: roomName.trim(), nickname: nickname.trim(), roomId: roomId!, tournament, description: description.trim().slice(0, 200) || null });
 });
 
 // GET /api/rooms/:code — get room info + members
@@ -114,6 +114,7 @@ router.post('/:code/join', (req: Request, res: Response) => {
       nickname: existing.nickname,
       roomId: room.id,
       tournament: room.tournament ?? '2026',
+      description: room.description ?? null,
     });
   }
 
@@ -123,7 +124,7 @@ router.post('/:code/join', (req: Request, res: Response) => {
     room.id,
     token
   );
-  res.json({ token, code: room.code, roomName: room.name, nickname: nickname.trim(), roomId: room.id, tournament: room.tournament ?? '2026' });
+  res.json({ token, code: room.code, roomName: room.name, nickname: nickname.trim(), roomId: room.id, tournament: room.tournament ?? '2026', description: room.description ?? null });
 });
 
 export default router;

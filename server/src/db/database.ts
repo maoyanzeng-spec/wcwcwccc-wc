@@ -71,6 +71,13 @@ try { db.exec("ALTER TABLE rooms ADD COLUMN description TEXT"); } catch {}
 try { db.exec("ALTER TABLE matches ADD COLUMN winner_team TEXT"); } catch {}
 try { db.exec("ALTER TABLE bonus_questions ADD COLUMN bracket_groups TEXT"); } catch {}
 
+// Translate legacy German bonus labels to Chinese
+db.exec(`
+  UPDATE bonus_questions SET label = '半决赛队伍' WHERE type = 'SEMI_FINALIST' AND label != '半决赛队伍';
+  UPDATE bonus_questions SET label = '决赛队伍'   WHERE type = 'FINALIST'      AND label != '决赛队伍';
+  UPDATE bonus_questions SET label = '世界杯冠军' WHERE type = 'CHAMPION'      AND label != '世界杯冠军';
+`);
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS bonus_questions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

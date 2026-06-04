@@ -3,6 +3,7 @@ import db from '../db/database';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { processMatchResults } from '../services/scoring';
 import { syncMatches } from '../services/footballApi';
+import { autoSeedIfEmpty } from '../services/autoSeed';
 
 const router = Router();
 
@@ -49,6 +50,19 @@ router.get('/', requireAuth, (req: AuthRequest, res: Response) => {
   }));
 
   res.json(matches);
+});
+
+// POST /api/matches/seed — force seed WM 2026 matches (admin)
+router.post('/seed', (req: AuthRequest, res: Response) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ error: 'Keine Berechtigung' });
+  }
+  db.exec("DELETE FROM predictions WHERE match_id IN (SELECT id FROM matches WHERE tournament='2026')");
+  db.exec("DELETE FROM matches WHERE tournament='2026'");
+  autoSeedIfEmpty();
+  const count = (db.prepare("SELECT COUNT(*) as c FROM matches WHERE tournament='2026'").get() as any).c;
+  res.json({ ok: true, seeded: count });
 });
 
 // POST /api/matches/sync — trigger manual sync (admin)

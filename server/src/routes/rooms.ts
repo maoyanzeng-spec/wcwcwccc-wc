@@ -39,38 +39,18 @@ router.post('/', (req: Request, res: Response) => {
     db.prepare('INSERT INTO users (nickname, room_id, token) VALUES (?, ?, ?)').run(
       nickname.trim(), roomId, token
     );
-    // Bracket structure per tournament
-    const BRACKETS: Record<string, { semi: string[][], final: string[][] }> = {
-      '2026': {
-        semi:  [['GROUP_A','GROUP_B','GROUP_C'], ['GROUP_D','GROUP_E','GROUP_F'], ['GROUP_G','GROUP_H','GROUP_I'], ['GROUP_J','GROUP_K','GROUP_L']],
-        final: [['GROUP_A','GROUP_B','GROUP_C','GROUP_D','GROUP_E','GROUP_F'], ['GROUP_G','GROUP_H','GROUP_I','GROUP_J','GROUP_K','GROUP_L']],
-      },
-      '2022': {
-        semi:  [['GROUP_A','GROUP_B'], ['GROUP_C','GROUP_D'], ['GROUP_E','GROUP_F'], ['GROUP_G','GROUP_H']],
-        final: [['GROUP_A','GROUP_B','GROUP_C','GROUP_D'], ['GROUP_E','GROUP_F','GROUP_G','GROUP_H']],
-      },
-    };
-    const bracket = BRACKETS[tournament] ?? BRACKETS['2026'];
-
     const insertBonus = db.prepare(
       'INSERT INTO bonus_questions (room_id, type, label, points_per_pick, max_picks, bracket_groups) VALUES (?, ?, ?, ?, ?, ?)'
     );
-
-    if ((bonusTypes as string[]).includes('SEMI_FINALIST')) {
-      bracket.semi.forEach((groups, i) => {
-        const groupLetters = groups.map(g => g.replace('GROUP_', '')).join(', ');
-        insertBonus.run(roomId, 'SEMI_FINALIST', `Viertel ${i + 1} (Gruppe ${groupLetters})`, 2, 1, groups.join(','));
-      });
-    }
-    if ((bonusTypes as string[]).includes('FINALIST')) {
-      bracket.final.forEach((groups, i) => {
-        const letters = groups.map(g => g.replace('GROUP_', ''));
-        const label = `Halbfinale ${i + 1} (Gruppe ${letters[0]}–${letters[letters.length - 1]})`;
-        insertBonus.run(roomId, 'FINALIST', label, 4, 1, groups.join(','));
-      });
-    }
-    if ((bonusTypes as string[]).includes('CHAMPION')) {
-      insertBonus.run(roomId, 'CHAMPION', 'Weltmeister', 10, 1, null);
+    const bonusConfig = [
+      { type: 'SEMI_FINALIST', label: 'Halbfinalisten', points: 2,  max: 4 },
+      { type: 'FINALIST',      label: 'Finalisten',     points: 4,  max: 2 },
+      { type: 'CHAMPION',      label: 'Weltmeister',    points: 10, max: 1 },
+    ];
+    for (const b of bonusConfig) {
+      if ((bonusTypes as string[]).includes(b.type)) {
+        insertBonus.run(roomId, b.type, b.label, b.points, b.max, null);
+      }
     }
     db.exec('COMMIT');
   } catch (e) {

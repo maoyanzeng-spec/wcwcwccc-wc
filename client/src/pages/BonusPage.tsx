@@ -44,8 +44,12 @@ export default function BonusPage() {
     if (current.includes(teamName)) {
       next = current.filter(t => t !== teamName);
     } else {
-      // max_picks is always 1 per bracket question
-      next = [teamName];
+      if (current.length >= question.max_picks) {
+        if (question.max_picks === 1) next = [teamName]; // replace
+        else return; // max reached
+      } else {
+        next = [...current, teamName];
+      }
     }
     setPicks(prev => {
       const filtered = prev.filter(p => p.question_id !== question.id);
@@ -103,7 +107,6 @@ export default function BonusPage() {
             <span className="text-xs text-gray-400 ml-auto">{qs[0].points_per_pick} Pkt. pro Treffer</span>
           </div>
 
-          {/* One card per bracket question */}
           {qs.map(q => {
             const selected = selectedFor(q.id);
             const pts = pointsFor(q.id);
@@ -112,16 +115,19 @@ export default function BonusPage() {
             return (
               <div key={q.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{q.label}</span>
+                  <div>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{q.label}</span>
+                    {q.max_picks > 1 && (
+                      <span className="text-xs text-gray-400 ml-2">{selected.length}/{q.max_picks}</span>
+                    )}
+                  </div>
                   {pts !== null ? (
                     <span className={`text-sm font-bold ${pts > 0 ? 'text-green-600' : 'text-red-500'}`}>+{pts} Pkt.</span>
                   ) : feedback[q.id] ? (
                     <span className="text-xs text-green-500">{feedback[q.id]}</span>
                   ) : saving === q.id ? (
                     <span className="text-xs text-gray-400">Speichert…</span>
-                  ) : (
-                    <span className="text-xs text-gray-400">{selected.length === 0 ? 'Noch nicht gewählt' : `✓ ${selected[0]}`}</span>
-                  )}
+                  ) : null}
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
@@ -135,7 +141,7 @@ export default function BonusPage() {
                       <button
                         key={team.name}
                         onClick={() => toggle(q, team.name)}
-                        disabled={!isOpen}
+                        disabled={!isOpen || (!isSelected && selected.length >= q.max_picks)}
                         className={`flex flex-col items-center p-2 rounded-lg border-2 text-center transition text-xs font-medium
                           ${isCorrect  ? 'border-green-500 bg-green-100 text-green-700' :
                             isWrong    ? 'border-red-300 bg-red-50 text-red-500' :

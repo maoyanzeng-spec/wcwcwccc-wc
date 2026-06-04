@@ -16,10 +16,10 @@ function generateCode(): string {
 router.post('/', (req: Request, res: Response) => {
   const { roomName, nickname, tournament = '2026', bonusTypes = ['SEMI_FINALIST', 'FINALIST', 'CHAMPION'], description = '' } = req.body;
   if (!roomName?.trim() || !nickname?.trim()) {
-    return res.status(400).json({ error: 'Raumname und Spitzname dürfen nicht leer sein' });
+    return res.status(400).json({ error: '请输入房间名和昵称' });
   }
   if (!['2022', '2026'].includes(tournament)) {
-    return res.status(400).json({ error: 'Ungültiges Turnier' });
+    return res.status(400).json({ error: '无效的赛事' });
   }
 
   let code = generateCode();
@@ -43,9 +43,9 @@ router.post('/', (req: Request, res: Response) => {
       'INSERT INTO bonus_questions (room_id, type, label, points_per_pick, max_picks, bracket_groups) VALUES (?, ?, ?, ?, ?, ?)'
     );
     const bonusConfig = [
-      { type: 'SEMI_FINALIST', label: 'Halbfinalisten', points: 2,  max: 4 },
-      { type: 'FINALIST',      label: 'Finalisten',     points: 4,  max: 2 },
-      { type: 'CHAMPION',      label: 'Weltmeister',    points: 10, max: 1 },
+      { type: 'SEMI_FINALIST', label: '半决赛队伍', points: 2,  max: 4 },
+      { type: 'FINALIST',      label: '决赛队伍',   points: 4,  max: 2 },
+      { type: 'CHAMPION',      label: '世界杯冠军', points: 10, max: 1 },
     ];
     for (const b of bonusConfig) {
       if ((bonusTypes as string[]).includes(b.type)) {
@@ -55,7 +55,7 @@ router.post('/', (req: Request, res: Response) => {
     db.exec('COMMIT');
   } catch (e) {
     db.exec('ROLLBACK');
-    return res.status(500).json({ error: 'Raum konnte nicht erstellt werden' });
+    return res.status(500).json({ error: '创建房间失败' });
   }
   res.json({ token, code, roomName: roomName.trim(), nickname: nickname.trim(), roomId: roomId!, tournament, description: description.trim().slice(0, 200) || null });
 });
@@ -63,7 +63,7 @@ router.post('/', (req: Request, res: Response) => {
 // GET /api/rooms/:code — get room info + members
 router.get('/:code', requireAuth, (req: AuthRequest, res: Response) => {
   const room = db.prepare('SELECT * FROM rooms WHERE code = ?').get(req.params.code) as any;
-  if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
+  if (!room) return res.status(404).json({ error: '房间不存在' });
 
   const members = db
     .prepare(
@@ -77,10 +77,10 @@ router.get('/:code', requireAuth, (req: AuthRequest, res: Response) => {
 // POST /api/rooms/:code/join — join existing room
 router.post('/:code/join', (req: Request, res: Response) => {
   const { nickname } = req.body;
-  if (!nickname?.trim()) return res.status(400).json({ error: 'Spitzname darf nicht leer sein' });
+  if (!nickname?.trim()) return res.status(400).json({ error: '请输入昵称' });
 
   const room = db.prepare('SELECT * FROM rooms WHERE code = ?').get(req.params.code) as any;
-  if (!room) return res.status(404).json({ error: 'Raum nicht gefunden, bitte Einladungscode prüfen' });
+  if (!room) return res.status(404).json({ error: '未找到房间，请检查邀请码' });
 
   const existing = db
     .prepare('SELECT * FROM users WHERE nickname = ? AND room_id = ?')

@@ -16,12 +16,16 @@ export default function BonusPage() {
   const [saving, setSaving] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
+  const [deadline, setDeadline] = useState<Date | null>(null);
+  const [isOpen, setIsOpen] = useState(true);
 
   useEffect(() => {
     api.get('/bonus').then(({ data }) => {
       setQuestions(data.questions);
       setPicks(data.picks);
       setTeams(data.teams);
+      setDeadline(data.deadline ? new Date(data.deadline) : null);
+      setIsOpen(data.isOpen);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -84,7 +88,14 @@ export default function BonusPage() {
 
   return (
     <div className="px-4 py-4">
-      <p className="text-xs text-gray-400 text-center mb-4">Tippe auf ein Team um es auszuwählen · Punkte werden sofort berechnet</p>
+      {deadline && (
+        <div className={`rounded-xl px-4 py-3 mb-4 text-sm text-center ${isOpen ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+          {isOpen
+            ? `⏳ Abgabe bis ${deadline.toLocaleString('de-DE', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })} (30 Min. vor dem ersten Spiel)`
+            : '🔒 Bonus-Abgabe geschlossen — das Turnier hat begonnen'}
+        </div>
+      )}
+      {isOpen && <p className="text-xs text-gray-400 text-center mb-4">Tippe auf ein Team um es auszuwählen · Punkte werden sofort berechnet</p>}
 
       {questions.map(q => {
         const selected = selectedFor(q.id);
@@ -123,12 +134,12 @@ export default function BonusPage() {
                 const teamPick = picks.find(p => p.question_id === q.id && p.team_name === team.name);
                 const isCorrect = teamPick?.points != null && teamPick.points > 0;
                 const isWrong = teamPick?.points === 0;
-                const isDisabled = !isSelected && selected.length >= q.max_picks && q.max_picks > 1;
+                const isDisabled = !isOpen || (!isSelected && selected.length >= q.max_picks && q.max_picks > 1);
 
                 return (
                   <button
                     key={team.name}
-                    onClick={() => toggle(q, team.name)}
+                    onClick={() => isOpen ? toggle(q, team.name) : undefined}
                     disabled={isDisabled}
                     className={`flex flex-col items-center p-2 rounded-lg border-2 text-center transition text-xs font-medium
                       ${isCorrect  ? 'border-green-500 bg-green-100 text-green-700' :

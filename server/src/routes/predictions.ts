@@ -22,8 +22,9 @@ router.post('/', requireAuth, (req: AuthRequest, res: Response) => {
 
   const now = new Date();
   const matchTime = new Date(match.match_time);
-  if (now >= matchTime || match.status === 'IN_PLAY' || match.status === 'FINISHED') {
-    return res.status(400).json({ error: 'Tipp-Abgabe nicht mehr möglich (Spiel läuft oder beendet)' });
+  const deadline = new Date(matchTime.getTime() - 30 * 60 * 1000);
+  if (now >= deadline || match.status === 'IN_PLAY' || match.status === 'FINISHED') {
+    return res.status(400).json({ error: 'Tipp-Abgabe geschlossen (Abgabe bis 30 Min. vor Spielbeginn)' });
   }
 
   // If the match already has a result (test/historical mode), score immediately

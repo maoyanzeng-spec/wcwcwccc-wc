@@ -40,6 +40,14 @@ function recalcUserBonusPoints(userId: number) {
   db.prepare('UPDATE users SET total_points = ? WHERE id = ?').run(matchPts + bonusPts, userId);
 }
 
+function getBonusDeadline(tournament: string): Date | null {
+  const first = db.prepare(
+    'SELECT match_time FROM matches WHERE tournament = ? ORDER BY match_time ASC LIMIT 1'
+  ).get(tournament) as any;
+  if (!first) return null;
+  return new Date(new Date(first.match_time).getTime() - 30 * 60 * 1000);
+}
+
 // GET /api/bonus — questions + user picks + team list for this room
 router.get('/', requireAuth, (req: AuthRequest, res: Response) => {
   const roomId = req.user!.room_id;
@@ -55,7 +63,10 @@ router.get('/', requireAuth, (req: AuthRequest, res: Response) => {
     ORDER BY name ASC
   `).all(room.tournament, room.tournament) as any[];
 
-  res.json({ questions, picks, teams });
+  const deadline = room.tournament === '2022' ? null : getBonusDeadline(room.tournament);
+  const isOpen = room.tournament === '2022' || !deadline || new Date() < deadline;
+
+  res.json({ questions, picks, teams, deadline: deadline?.toISOString() ?? null, isOpen });
 });
 
 // POST /api/bonus/:id/picks — save picks, auto-score if answers are known
@@ -70,6 +81,14 @@ router.post('/:id/picks', requireAuth, (req: AuthRequest, res: Response) => {
     'SELECT bq.*, r.tournament FROM bonus_questions bq JOIN rooms r ON r.id = bq.room_id WHERE bq.id = ? AND bq.room_id = ?'
   ).get(questionId, req.user!.room_id) as any;
   if (!question) return res.status(404).json({ error: 'Frage nicht gefunden' });
+
+  // Enforce deadline for WM2026
+  if (question.tournament !== '2022') {
+    const deadline = getBonusDeadline(question.tournament);
+    if (deadline && new Date() >= deadline) {
+      return res.status(400).json({ error: 'Bonus-Abgabe geschlossen (Abgabe vor dem ersten Spiel)' });
+    }
+  }
 
   if (teams.length > question.max_picks) {
     return res.status(400).json({ error: `Maximal ${question.max_picks} Auswahl erlaubt` });

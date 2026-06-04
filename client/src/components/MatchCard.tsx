@@ -19,7 +19,8 @@ const STAGE_LABELS: Record<string, string> = {
 export default function MatchCard({ match, onPredict }: Props) {
   const now = new Date();
   const matchTime = new Date(match.match_time);
-  const canPredict = now < matchTime && match.status === 'SCHEDULED';
+  const deadline = new Date(matchTime.getTime() - 30 * 60 * 1000);
+  const canPredict = now < deadline && match.status === 'SCHEDULED';
   const isFinished = match.status === 'FINISHED';
   const isLive = match.status === 'IN_PLAY';
 

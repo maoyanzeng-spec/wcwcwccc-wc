@@ -78,6 +78,7 @@ db.exec(`
     label TEXT NOT NULL,
     points_per_pick INTEGER NOT NULL,
     max_picks INTEGER NOT NULL,
+    bracket_groups TEXT,
     FOREIGN KEY (room_id) REFERENCES rooms(id)
   );
 

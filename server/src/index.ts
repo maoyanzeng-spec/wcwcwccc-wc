@@ -4,7 +4,7 @@ dotenv.config();
 import cron from 'node-cron';
 import { app } from './app';
 import { syncMatches } from './services/footballApi';
-import { autoSeedIfEmpty, forceSeed } from './services/autoSeed';
+import { autoSeedIfEmpty, forceSeed, autoSeed2022IfEmpty, forceSeed2022 } from './services/autoSeed';
 
 const PORT = process.env.PORT || 3001;
 
@@ -12,7 +12,8 @@ cron.schedule('*/15 * * * *', () => {
   syncMatches().catch(console.error);
 });
 
-if (process.env.FORCE_SEED === 'true') forceSeed(); else autoSeedIfEmpty();
+if (process.env.FORCE_SEED === 'true') { forceSeed(); forceSeed2022(); }
+else { autoSeedIfEmpty(); autoSeed2022IfEmpty(); }
 
 app.listen(PORT, () => {
   console.log(`Server: http://localhost:${PORT}`);

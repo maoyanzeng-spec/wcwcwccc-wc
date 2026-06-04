@@ -75,6 +75,109 @@ const MATCHES_2026: { date: string; home: [string,string]; away: [string,string]
   { date: '2026-06-28T02:00:00Z', home: ['Algerien','ALG'], away: ['Österreich','AUT'], group:'J', day:3 },
 ];
 
+// WM 2022 – all 64 matches with real scores, seeded as SCHEDULED so tips can always be submitted
+const MATCHES_2022: { home:[string,string]; away:[string,string]; hs:number; as:number; stage:string; group?:string; day?:number; wt?:string }[] = [
+  // Group A
+  { home:['Katar','QAT'],       away:['Ecuador','ECU'],      hs:0,as:2, stage:'GROUP_STAGE', group:'A', day:1 },
+  { home:['Senegal','SEN'],     away:['Niederlande','NED'],  hs:0,as:2, stage:'GROUP_STAGE', group:'A', day:1 },
+  { home:['Katar','QAT'],       away:['Senegal','SEN'],      hs:1,as:3, stage:'GROUP_STAGE', group:'A', day:2 },
+  { home:['Niederlande','NED'], away:['Ecuador','ECU'],      hs:1,as:1, stage:'GROUP_STAGE', group:'A', day:2 },
+  { home:['Niederlande','NED'], away:['Katar','QAT'],        hs:2,as:0, stage:'GROUP_STAGE', group:'A', day:3 },
+  { home:['Ecuador','ECU'],     away:['Senegal','SEN'],      hs:1,as:2, stage:'GROUP_STAGE', group:'A', day:3 },
+  // Group B
+  { home:['England','ENG'],     away:['Iran','IRN'],         hs:6,as:2, stage:'GROUP_STAGE', group:'B', day:1 },
+  { home:['USA','USA'],         away:['Wales','WAL'],        hs:1,as:1, stage:'GROUP_STAGE', group:'B', day:1 },
+  { home:['Wales','WAL'],       away:['Iran','IRN'],         hs:0,as:2, stage:'GROUP_STAGE', group:'B', day:2 },
+  { home:['England','ENG'],     away:['USA','USA'],          hs:0,as:0, stage:'GROUP_STAGE', group:'B', day:2 },
+  { home:['Wales','WAL'],       away:['England','ENG'],      hs:0,as:3, stage:'GROUP_STAGE', group:'B', day:3 },
+  { home:['Iran','IRN'],        away:['USA','USA'],          hs:0,as:1, stage:'GROUP_STAGE', group:'B', day:3 },
+  // Group C
+  { home:['Argentinien','ARG'], away:['Saudi-Arabien','KSA'],hs:1,as:2, stage:'GROUP_STAGE', group:'C', day:1 },
+  { home:['Mexiko','MEX'],      away:['Polen','POL'],        hs:0,as:0, stage:'GROUP_STAGE', group:'C', day:1 },
+  { home:['Polen','POL'],       away:['Saudi-Arabien','KSA'],hs:2,as:0, stage:'GROUP_STAGE', group:'C', day:2 },
+  { home:['Argentinien','ARG'], away:['Mexiko','MEX'],       hs:2,as:0, stage:'GROUP_STAGE', group:'C', day:2 },
+  { home:['Polen','POL'],       away:['Argentinien','ARG'],  hs:0,as:2, stage:'GROUP_STAGE', group:'C', day:3 },
+  { home:['Saudi-Arabien','KSA'],away:['Mexiko','MEX'],      hs:1,as:2, stage:'GROUP_STAGE', group:'C', day:3 },
+  // Group D
+  { home:['Dänemark','DEN'],    away:['Tunesien','TUN'],     hs:0,as:0, stage:'GROUP_STAGE', group:'D', day:1 },
+  { home:['Frankreich','FRA'],  away:['Australien','AUS'],   hs:4,as:1, stage:'GROUP_STAGE', group:'D', day:1 },
+  { home:['Tunesien','TUN'],    away:['Australien','AUS'],   hs:0,as:1, stage:'GROUP_STAGE', group:'D', day:2 },
+  { home:['Frankreich','FRA'],  away:['Dänemark','DEN'],     hs:2,as:1, stage:'GROUP_STAGE', group:'D', day:2 },
+  { home:['Tunesien','TUN'],    away:['Frankreich','FRA'],   hs:1,as:0, stage:'GROUP_STAGE', group:'D', day:3 },
+  { home:['Australien','AUS'],  away:['Dänemark','DEN'],     hs:1,as:0, stage:'GROUP_STAGE', group:'D', day:3 },
+  // Group E
+  { home:['Deutschland','GER'], away:['Japan','JPN'],        hs:1,as:2, stage:'GROUP_STAGE', group:'E', day:1 },
+  { home:['Spanien','ESP'],     away:['Costa Rica','CRC'],   hs:7,as:0, stage:'GROUP_STAGE', group:'E', day:1 },
+  { home:['Japan','JPN'],       away:['Costa Rica','CRC'],   hs:0,as:1, stage:'GROUP_STAGE', group:'E', day:2 },
+  { home:['Spanien','ESP'],     away:['Deutschland','GER'],  hs:1,as:1, stage:'GROUP_STAGE', group:'E', day:2 },
+  { home:['Japan','JPN'],       away:['Spanien','ESP'],      hs:2,as:1, stage:'GROUP_STAGE', group:'E', day:3 },
+  { home:['Costa Rica','CRC'],  away:['Deutschland','GER'],  hs:2,as:4, stage:'GROUP_STAGE', group:'E', day:3 },
+  // Group F
+  { home:['Marokko','MAR'],     away:['Kroatien','CRO'],     hs:0,as:0, stage:'GROUP_STAGE', group:'F', day:1 },
+  { home:['Belgien','BEL'],     away:['Kanada','CAN'],       hs:1,as:0, stage:'GROUP_STAGE', group:'F', day:1 },
+  { home:['Belgien','BEL'],     away:['Marokko','MAR'],      hs:0,as:2, stage:'GROUP_STAGE', group:'F', day:2 },
+  { home:['Kroatien','CRO'],    away:['Kanada','CAN'],       hs:4,as:1, stage:'GROUP_STAGE', group:'F', day:2 },
+  { home:['Kroatien','CRO'],    away:['Belgien','BEL'],      hs:0,as:0, stage:'GROUP_STAGE', group:'F', day:3 },
+  { home:['Marokko','MAR'],     away:['Kanada','CAN'],       hs:2,as:1, stage:'GROUP_STAGE', group:'F', day:3 },
+  // Group G
+  { home:['Schweiz','SUI'],     away:['Kamerun','CMR'],      hs:1,as:0, stage:'GROUP_STAGE', group:'G', day:1 },
+  { home:['Brasilien','BRA'],   away:['Serbien','SRB'],      hs:2,as:0, stage:'GROUP_STAGE', group:'G', day:1 },
+  { home:['Kamerun','CMR'],     away:['Serbien','SRB'],      hs:3,as:3, stage:'GROUP_STAGE', group:'G', day:2 },
+  { home:['Brasilien','BRA'],   away:['Schweiz','SUI'],      hs:1,as:0, stage:'GROUP_STAGE', group:'G', day:2 },
+  { home:['Kamerun','CMR'],     away:['Brasilien','BRA'],    hs:1,as:0, stage:'GROUP_STAGE', group:'G', day:3 },
+  { home:['Serbien','SRB'],     away:['Schweiz','SUI'],      hs:2,as:3, stage:'GROUP_STAGE', group:'G', day:3 },
+  // Group H
+  { home:['Uruguay','URU'],     away:['Südkorea','KOR'],     hs:0,as:0, stage:'GROUP_STAGE', group:'H', day:1 },
+  { home:['Portugal','POR'],    away:['Ghana','GHA'],        hs:3,as:2, stage:'GROUP_STAGE', group:'H', day:1 },
+  { home:['Südkorea','KOR'],    away:['Ghana','GHA'],        hs:2,as:3, stage:'GROUP_STAGE', group:'H', day:2 },
+  { home:['Portugal','POR'],    away:['Uruguay','URU'],      hs:2,as:0, stage:'GROUP_STAGE', group:'H', day:2 },
+  { home:['Südkorea','KOR'],    away:['Portugal','POR'],     hs:2,as:1, stage:'GROUP_STAGE', group:'H', day:3 },
+  { home:['Ghana','GHA'],       away:['Uruguay','URU'],      hs:0,as:2, stage:'GROUP_STAGE', group:'H', day:3 },
+  // Round of 16
+  { home:['Niederlande','NED'], away:['USA','USA'],          hs:3,as:1, stage:'LAST_16' },
+  { home:['Argentinien','ARG'], away:['Australien','AUS'],   hs:2,as:1, stage:'LAST_16' },
+  { home:['Frankreich','FRA'],  away:['Polen','POL'],        hs:3,as:1, stage:'LAST_16' },
+  { home:['England','ENG'],     away:['Senegal','SEN'],      hs:3,as:0, stage:'LAST_16' },
+  { home:['Japan','JPN'],       away:['Kroatien','CRO'],     hs:1,as:1, stage:'LAST_16' },
+  { home:['Brasilien','BRA'],   away:['Südkorea','KOR'],     hs:4,as:1, stage:'LAST_16' },
+  { home:['Marokko','MAR'],     away:['Spanien','ESP'],      hs:0,as:0, stage:'LAST_16' },
+  { home:['Portugal','POR'],    away:['Schweiz','SUI'],      hs:6,as:1, stage:'LAST_16' },
+  // Quarter-finals
+  { home:['Kroatien','CRO'],    away:['Brasilien','BRA'],    hs:1,as:1, stage:'QUARTER_FINALS' },
+  { home:['Niederlande','NED'], away:['Argentinien','ARG'],  hs:2,as:2, stage:'QUARTER_FINALS' },
+  { home:['Marokko','MAR'],     away:['Portugal','POR'],     hs:1,as:0, stage:'QUARTER_FINALS' },
+  { home:['Frankreich','FRA'],  away:['England','ENG'],      hs:2,as:1, stage:'QUARTER_FINALS' },
+  // Semi-finals
+  { home:['Argentinien','ARG'], away:['Kroatien','CRO'],     hs:3,as:0, stage:'SEMI_FINALS' },
+  { home:['Frankreich','FRA'],  away:['Marokko','MAR'],      hs:2,as:0, stage:'SEMI_FINALS' },
+  // Third place
+  { home:['Kroatien','CRO'],    away:['Marokko','MAR'],      hs:2,as:1, stage:'THIRD_PLACE' },
+  // Final – AET 3-3, Argentina wins on penalties
+  { home:['Argentinien','ARG'], away:['Frankreich','FRA'],   hs:3,as:3, stage:'FINAL', wt:'Argentinien' },
+];
+
+function seed2022(): void {
+  const insert = db.prepare(`
+    INSERT INTO matches
+      (stage, group_name, match_day, home_team, away_team, home_team_short, away_team_short,
+       match_time, home_score, away_score, winner_team, status, tournament)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'SCHEDULED', '2022')
+  `);
+  // Spread match times starting 1h from now, 30min apart — SCHEDULED so tips always open
+  const base = Date.now() + 60 * 60 * 1000;
+  db.exec('BEGIN');
+  MATCHES_2022.forEach((m, i) => {
+    const t = new Date(base + i * 30 * 60 * 1000).toISOString();
+    insert.run(
+      m.stage, m.group ? `GROUP_${m.group}` : null, m.day ?? null,
+      m.home[0], m.away[0], m.home[1], m.away[1],
+      t, m.hs, m.as, m.wt ?? null
+    );
+  });
+  db.exec('COMMIT');
+  console.log(`Seeded ${MATCHES_2022.length} WM 2022 matches (SCHEDULED + real scores).`);
+}
+
 function seed(): void {
   const insert = db.prepare(`
     INSERT INTO matches (stage, group_name, match_day, home_team, away_team, home_team_short, away_team_short, match_time, status, tournament)
@@ -93,6 +196,20 @@ export function autoSeedIfEmpty(): void {
   if (count > 0) return;
   console.log('Empty DB — auto-seeding WM 2026 matches…');
   seed();
+}
+
+export function autoSeed2022IfEmpty(): void {
+  const count = (db.prepare("SELECT COUNT(*) as c FROM matches WHERE tournament='2022'").get() as any).c;
+  if (count > 0) return;
+  console.log('Auto-seeding WM 2022 matches (SCHEDULED + real scores for instant scoring)…');
+  seed2022();
+}
+
+export function forceSeed2022(): void {
+  console.log('Force-reseeding WM 2022…');
+  db.exec("DELETE FROM predictions WHERE match_id IN (SELECT id FROM matches WHERE tournament='2022')");
+  db.exec("DELETE FROM matches WHERE tournament='2022'");
+  seed2022();
 }
 
 export function forceSeed(): void {

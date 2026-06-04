@@ -97,11 +97,14 @@ db.exec(`
 // Must run after bonus_questions table is created
 try { db.exec("ALTER TABLE bonus_questions ADD COLUMN bracket_groups TEXT"); } catch {}
 
-// Translate legacy German bonus labels to Chinese
-db.exec(`
-  UPDATE bonus_questions SET label = '半决赛队伍' WHERE type = 'SEMI_FINALIST' AND label != '半决赛队伍';
-  UPDATE bonus_questions SET label = '决赛队伍'   WHERE type = 'FINALIST'      AND label != '决赛队伍';
-  UPDATE bonus_questions SET label = '世界杯冠军' WHERE type = 'CHAMPION'      AND label != '世界杯冠军';
-`);
+// Translate legacy German bonus labels to Chinese (safe to re-run)
+try {
+  db.exec(`
+    UPDATE bonus_questions SET label = '半决赛队伍' WHERE type = 'SEMI_FINALIST' AND label != '半决赛队伍';
+    UPDATE bonus_questions SET label = '决赛队伍'   WHERE type = 'FINALIST'      AND label != '决赛队伍';
+    UPDATE bonus_questions SET label = '世界杯冠军' WHERE type = 'CHAMPION'      AND label != '世界杯冠军';
+  `);
+} catch {}
 
 export default db;
+

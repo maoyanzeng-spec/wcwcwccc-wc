@@ -199,9 +199,12 @@ export function autoSeedIfEmpty(): void {
 }
 
 export function autoSeed2022IfEmpty(): void {
-  const count = (db.prepare("SELECT COUNT(*) as c FROM matches WHERE tournament='2022'").get() as any).c;
-  if (count > 0) return;
+  const scheduled = (db.prepare("SELECT COUNT(*) as c FROM matches WHERE tournament='2022' AND status='SCHEDULED'").get() as any).c;
+  if (scheduled > 0) return;
+  // Clear any FINISHED 2022 matches and reseed as SCHEDULED
   console.log('Auto-seeding WM 2022 matches (SCHEDULED + real scores for instant scoring)…');
+  db.exec("DELETE FROM predictions WHERE match_id IN (SELECT id FROM matches WHERE tournament='2022')");
+  db.exec("DELETE FROM matches WHERE tournament='2022'");
   seed2022();
 }
 

@@ -4,12 +4,15 @@ dotenv.config();
 import cron from 'node-cron';
 import { app } from './app';
 import { syncMatches } from './services/footballApi';
+import { autoSeedIfEmpty } from './services/autoSeed';
 
 const PORT = process.env.PORT || 3001;
 
 cron.schedule('*/15 * * * *', () => {
   syncMatches().catch(console.error);
 });
+
+autoSeedIfEmpty();
 
 app.listen(PORT, () => {
   console.log(`Server: http://localhost:${PORT}`);

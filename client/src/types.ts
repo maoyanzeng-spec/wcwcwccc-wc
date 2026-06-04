@@ -30,6 +30,8 @@ export interface BonusQuestion {
   label: string;
   points_per_pick: number;
   max_picks: number;
+  bracket_groups: string | null;
+  teams: BonusTeam[];
 }
 
 export interface BonusPick {

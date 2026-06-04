@@ -5,18 +5,29 @@ import { requireAuth, AuthRequest } from '../middleware/auth';
 const router = Router();
 
 // Derive correct answers for a bonus question from match results
-function getCorrectTeams(type: string, tournament: string): string[] {
+// bracket_groups limits which teams count (e.g. only semi-finalists from those groups)
+function getCorrectTeams(type: string, tournament: string, bracketGroups?: string | null): string[] {
+  const inBracket = (team: string): boolean => {
+    if (!bracketGroups) return true;
+    const groups = bracketGroups.split(',');
+    const row = db.prepare(
+      `SELECT group_name FROM matches WHERE tournament = ? AND (home_team = ? OR away_team = ?) AND group_name IS NOT NULL LIMIT 1`
+    ).get(tournament, team, team) as any;
+    return row ? groups.includes(row.group_name) : false;
+  };
+
   if (type === 'SEMI_FINALIST') {
     const rows = db.prepare(
       "SELECT home_team, away_team FROM matches WHERE tournament = ? AND stage = 'SEMI_FINALS' AND home_score IS NOT NULL"
     ).all(tournament) as any[];
-    return rows.flatMap(r => [r.home_team, r.away_team]);
+    return rows.flatMap(r => [r.home_team, r.away_team]).filter(inBracket);
   }
   if (type === 'FINALIST') {
     const row = db.prepare(
       "SELECT home_team, away_team FROM matches WHERE tournament = ? AND stage = 'FINAL' AND home_score IS NOT NULL"
     ).get(tournament) as any;
-    return row ? [row.home_team, row.away_team] : [];
+    if (!row) return [];
+    return [row.home_team, row.away_team].filter(inBracket);
   }
   if (type === 'CHAMPION') {
     const row = db.prepare(
@@ -56,17 +67,38 @@ router.get('/', requireAuth, (req: AuthRequest, res: Response) => {
   const room = db.prepare('SELECT tournament FROM rooms WHERE id = ?').get(roomId) as any;
   const questions = db.prepare('SELECT * FROM bonus_questions WHERE room_id = ? ORDER BY id').all(roomId) as any[];
   const picks = db.prepare('SELECT * FROM bonus_picks WHERE user_id = ?').all(userId) as any[];
-  const teams = db.prepare(`
-    SELECT DISTINCT home_team AS name, home_team_short AS short FROM matches WHERE tournament = ?
-    UNION
-    SELECT DISTINCT away_team AS name, away_team_short AS short FROM matches WHERE tournament = ?
-    ORDER BY name ASC
-  `).all(room.tournament, room.tournament) as any[];
+
+  // Build per-question team lists filtered by bracket_groups
+  const questionsWithTeams = questions.map((q: any) => {
+    let teamQuery: string;
+    const params: any[] = [];
+    if (q.bracket_groups) {
+      const groups = q.bracket_groups.split(',').map((g: string) => `'${g}'`).join(',');
+      teamQuery = `
+        SELECT DISTINCT home_team AS name, home_team_short AS short FROM matches
+        WHERE tournament = ? AND group_name IN (${groups})
+        UNION
+        SELECT DISTINCT away_team AS name, away_team_short AS short FROM matches
+        WHERE tournament = ? AND group_name IN (${groups})
+        ORDER BY name ASC
+      `;
+      params.push(room.tournament, room.tournament);
+    } else {
+      teamQuery = `
+        SELECT DISTINCT home_team AS name, home_team_short AS short FROM matches WHERE tournament = ?
+        UNION
+        SELECT DISTINCT away_team AS name, away_team_short AS short FROM matches WHERE tournament = ?
+        ORDER BY name ASC
+      `;
+      params.push(room.tournament, room.tournament);
+    }
+    return { ...q, teams: db.prepare(teamQuery).all(...params) };
+  });
 
   const deadline = room.tournament === '2022' ? null : getBonusDeadline(room.tournament);
   const isOpen = room.tournament === '2022' || !deadline || new Date() < deadline;
 
-  res.json({ questions, picks, teams, deadline: deadline?.toISOString() ?? null, isOpen });
+  res.json({ questions: questionsWithTeams, picks, deadline: deadline?.toISOString() ?? null, isOpen });
 });
 
 // POST /api/bonus/:id/picks — save picks, auto-score if answers are known
@@ -94,7 +126,7 @@ router.post('/:id/picks', requireAuth, (req: AuthRequest, res: Response) => {
     return res.status(400).json({ error: `Maximal ${question.max_picks} Auswahl erlaubt` });
   }
 
-  const correctTeams = getCorrectTeams(question.type, question.tournament);
+  const correctTeams = getCorrectTeams(question.type, question.tournament, question.bracket_groups);
 
   db.exec('BEGIN');
   db.prepare('DELETE FROM bonus_picks WHERE user_id = ? AND question_id = ?').run(userId, questionId);

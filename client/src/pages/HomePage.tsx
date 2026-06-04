@@ -127,8 +127,8 @@ export default function HomePage() {
             <div className="mb-4">
               <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Bonus-Fragen</div>
               {[
-                { type: 'SEMI_FINALIST', label: '🏅 Halbfinalisten', sub: '2 Pkt. pro Treffer' },
-                { type: 'FINALIST',      label: '🥈 Finalisten',     sub: '4 Pkt. pro Treffer' },
+                { type: 'SEMI_FINALIST', label: '🏅 Halbfinalisten', sub: '1 Team pro Viertel · 2 Pkt.' },
+                { type: 'FINALIST',      label: '🥈 Finalisten',     sub: '1 Team pro Halbfinale · 4 Pkt.' },
                 { type: 'CHAMPION',      label: '🏆 Weltmeister',    sub: '10 Pkt. bei Treffer' },
               ].map(b => (
                 <label key={b.type} className="flex items-center gap-3 py-2 cursor-pointer">

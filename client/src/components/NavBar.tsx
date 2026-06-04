@@ -148,7 +148,7 @@ export default function NavBar() {
               onClick={logout}
               className="text-xs text-green-200 hover:text-white px-2 py-1 rounded-full hover:bg-green-600 transition"
             >
-              Abmelden
+              Neues Spiel
             </button>
           </div>
         </div>

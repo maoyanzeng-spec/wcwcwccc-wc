@@ -1,5 +1,6 @@
 import { Match } from '../types';
 import { flagUrl } from '../lib/flags';
+import { getSession } from '../lib/storage';
 
 interface Props {
   match: Match;
@@ -19,8 +20,9 @@ const STAGE_LABELS: Record<string, string> = {
 export default function MatchCard({ match, onPredict }: Props) {
   const now = new Date();
   const matchTime = new Date(match.match_time);
+  const is2022 = getSession()?.tournament === '2022';
   const deadline = new Date(matchTime.getTime() - 30 * 60 * 1000);
-  const canPredict = now < deadline && match.status === 'SCHEDULED';
+  const canPredict = (is2022 || now < deadline) && match.status === 'SCHEDULED';
   const isFinished = match.status === 'FINISHED';
   const isLive = match.status === 'IN_PLAY';
 

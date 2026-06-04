@@ -17,13 +17,14 @@ router.post('/', requireAuth, (req: AuthRequest, res: Response) => {
     return res.status(400).json({ error: 'Ergebnis muss eine nicht-negative ganze Zahl sein' });
   }
 
-  const match = db.prepare('SELECT status, match_time, home_score, away_score FROM matches WHERE id = ?').get(match_id) as any;
+  const match = db.prepare('SELECT status, match_time, home_score, away_score, tournament FROM matches WHERE id = ?').get(match_id) as any;
   if (!match) return res.status(404).json({ error: 'Spiel nicht gefunden' });
 
   const now = new Date();
   const matchTime = new Date(match.match_time);
+  const is2022 = match.tournament === '2022';
   const deadline = new Date(matchTime.getTime() - 30 * 60 * 1000);
-  if (now >= deadline || match.status === 'IN_PLAY' || match.status === 'FINISHED') {
+  if ((!is2022 && now >= deadline) || match.status === 'IN_PLAY' || match.status === 'FINISHED') {
     return res.status(400).json({ error: 'Tipp-Abgabe geschlossen (Abgabe bis 30 Min. vor Spielbeginn)' });
   }
 

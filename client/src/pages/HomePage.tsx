@@ -69,11 +69,31 @@ export default function HomePage() {
         <p className="text-xl font-bold text-white mb-1 drop-shadow">
           Tippen mit Freunden &amp; Familie
         </p>
-        <p className="text-green-200 text-sm mb-3">FIFA World Cup Tippspiel</p>
-        <div className="flex items-center justify-center gap-4 text-xs text-green-300">
-          <span>✓ Richtiger Ausgang +1 Pt.</span>
-          <span>·</span>
-          <span>✓ Exakter Treffer +3 Pt.</span>
+        <p className="text-green-200 text-sm mb-4">FIFA World Cup Tippspiel</p>
+        <div className="bg-white/10 rounded-2xl px-5 py-3 text-left space-y-1.5 text-xs text-green-100">
+          <div className="text-white font-semibold text-xs uppercase tracking-wide mb-2 opacity-70">Punkte</div>
+          <div className="flex justify-between gap-6">
+            <span>✓ Richtiger Ausgang</span>
+            <span className="font-bold text-white">+1 Pt.</span>
+          </div>
+          <div className="flex justify-between gap-6">
+            <span>✓ Exaktes Ergebnis</span>
+            <span className="font-bold text-white">+3 Pt.</span>
+          </div>
+          <div className="border-t border-white/20 my-1" />
+          <div className="text-white font-semibold text-xs uppercase tracking-wide mb-1 opacity-70">Bonus</div>
+          <div className="flex justify-between gap-6">
+            <span>🏅 Halbfinalist (pro Treffer)</span>
+            <span className="font-bold text-white">+2 Pt.</span>
+          </div>
+          <div className="flex justify-between gap-6">
+            <span>🥈 Finalist (pro Treffer)</span>
+            <span className="font-bold text-white">+4 Pt.</span>
+          </div>
+          <div className="flex justify-between gap-6">
+            <span>🏆 Weltmeister</span>
+            <span className="font-bold text-white">+10 Pt.</span>
+          </div>
         </div>
       </div>
 

@@ -106,7 +106,22 @@ export default function NavBar() {
 
                     {/* WeChat */}
                     <button
-                      onClick={() => { copyLink(); }}
+                      onClick={() => {
+                        const url = getInviteUrl();
+                        const text = getInviteText();
+                        navigator.clipboard.writeText(text + '\n' + url).then(() => {
+                          setCopiedLink(true);
+                          setTimeout(() => setCopiedLink(false), 2500);
+                          // Try to open WeChat app via deep link
+                          const ua = navigator.userAgent.toLowerCase();
+                          if (ua.includes('android')) {
+                            window.location.href = 'intent://send#Intent;scheme=weixin;package=com.tencent.mm;S.browser_fallback_url=https://weixin.qq.com;end';
+                          } else {
+                            window.location.href = 'weixin://';
+                          }
+                        });
+                        setShowShare(false);
+                      }}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition border-t border-gray-50"
                     >
                       <div className="w-8 h-8 rounded-full bg-[#07C160] flex items-center justify-center flex-shrink-0">
@@ -114,7 +129,7 @@ export default function NavBar() {
                       </div>
                       <div className="text-left">
                         <div className="text-sm font-medium text-gray-800">WeChat</div>
-                        <div className="text-xs text-gray-400">{copiedLink ? '✓ Link kopiert!' : 'Link kopieren & einfügen'}</div>
+                        <div className="text-xs text-gray-400">WeChat öffnen &amp; Link einfügen</div>
                       </div>
                     </button>
 

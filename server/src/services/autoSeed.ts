@@ -75,11 +75,7 @@ const MATCHES_2026: { date: string; home: [string,string]; away: [string,string]
   { date: '2026-06-28T02:00:00Z', home: ['Algerien','ALG'], away: ['Österreich','AUT'], group:'J', day:3 },
 ];
 
-export function autoSeedIfEmpty(): void {
-  const count = (db.prepare("SELECT COUNT(*) as c FROM matches WHERE tournament='2026'").get() as any).c;
-  if (count > 0) return;
-
-  console.log('Empty DB detected — auto-seeding WM 2026 matches…');
+function seed(): void {
   const insert = db.prepare(`
     INSERT INTO matches (stage, group_name, match_day, home_team, away_team, home_team_short, away_team_short, match_time, status, tournament)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'SCHEDULED', '2026')
@@ -89,5 +85,19 @@ export function autoSeedIfEmpty(): void {
     insert.run('GROUP_STAGE', `GROUP_${m.group}`, m.day, m.home[0], m.away[0], m.home[1], m.away[1], m.date);
   }
   db.exec('COMMIT');
-  console.log(`Auto-seeded ${MATCHES_2026.length} WM 2026 matches.`);
+  console.log(`Seeded ${MATCHES_2026.length} WM 2026 matches.`);
+}
+
+export function autoSeedIfEmpty(): void {
+  const count = (db.prepare("SELECT COUNT(*) as c FROM matches WHERE tournament='2026'").get() as any).c;
+  if (count > 0) return;
+  console.log('Empty DB — auto-seeding WM 2026 matches…');
+  seed();
+}
+
+export function forceSeed(): void {
+  console.log('Force-reseeding WM 2026 (clearing duplicates)…');
+  db.exec("DELETE FROM predictions WHERE match_id IN (SELECT id FROM matches WHERE tournament='2026')");
+  db.exec("DELETE FROM matches WHERE tournament='2026'");
+  seed();
 }

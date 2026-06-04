@@ -76,9 +76,8 @@ const MATCHES_2026: { date: string; home: [string,string]; away: [string,string]
 ];
 
 export function autoSeedIfEmpty(): void {
-  // FORCE_SEED=true bypasses the empty check (used for one-time remote seeding)
   const count = (db.prepare("SELECT COUNT(*) as c FROM matches WHERE tournament='2026'").get() as any).c;
-  if (count > 0 && process.env.FORCE_SEED !== 'true') return;
+  if (count > 0) return;
 
   console.log('Empty DB detected — auto-seeding WM 2026 matches…');
   const insert = db.prepare(`

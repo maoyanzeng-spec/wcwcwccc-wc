@@ -1,0 +1,18 @@
+{
+  "name": "worldcup-guess",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n server,client -c green,blue \"cd server && npm run dev\" \"cd client && npm run dev\"",
+    "seed": "cd server && npm run seed",
+    "install:all": "cd server && npm install --no-workspaces && cd ../client && npm install --no-workspaces",
+    "build": "npm run install:all && cd client && npm run build && cd ../server && npm run build",
+    "start": "node server/dist/index.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

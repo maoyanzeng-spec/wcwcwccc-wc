@@ -22,7 +22,7 @@ export default function PredictionModal({ match, onClose, onSaved }: Props) {
       onSaved();
       onClose();
     } catch (e: any) {
-      setError(e.response?.data?.error ?? 'Fehler beim Absenden, bitte erneut versuchen');
+      setError(e.response?.data?.error ?? '提交出错，请重试');
     } finally {
       setLoading(false);
     }
@@ -35,7 +35,7 @@ export default function PredictionModal({ match, onClose, onSaved }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-center mb-4">
-          <div className="text-xs text-gray-500 mb-1">Ergebnis tippen</div>
+          <div className="text-xs text-gray-500 mb-1">预测比分</div>
           <div className="font-bold text-gray-900">
             {match.home_team_short ?? match.home_team} vs {match.away_team_short ?? match.away_team}
           </div>
@@ -48,7 +48,7 @@ export default function PredictionModal({ match, onClose, onSaved }: Props) {
         </div>
 
         <div className="bg-green-50 rounded-lg p-3 text-xs text-green-800 text-center mb-4">
-          Richtiges Ergebnis <strong>+1 Pt.</strong> · Exakter Treffer <strong>+3 Pt.</strong>
+          猜对胜负 <strong>+1 分</strong> · 精确比分 <strong>+3 分</strong>
         </div>
 
         {error && <div className="text-red-500 text-sm text-center mb-3">{error}</div>}
@@ -58,7 +58,7 @@ export default function PredictionModal({ match, onClose, onSaved }: Props) {
           disabled={loading}
           className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-bold rounded-xl transition text-base"
         >
-          {loading ? 'Wird gesendet...' : 'Tipp bestätigen'}
+          {loading ? '提交中...' : '确认预测'}
         </button>
       </div>
     </div>

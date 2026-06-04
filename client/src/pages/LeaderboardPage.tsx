@@ -25,12 +25,12 @@ export default function LeaderboardPage() {
 
   return (
     <div className="px-4 py-4">
-      <h2 className="text-lg font-bold text-gray-800 mb-4">Rangliste</h2>
+      <h2 className="text-lg font-bold text-gray-800 mb-4">排行榜</h2>
 
       {loading ? (
-        <div className="text-center py-20 text-gray-400">Lädt...</div>
+        <div className="text-center py-20 text-gray-400">加载中...</div>
       ) : entries.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">Noch niemand hat getippt</div>
+        <div className="text-center py-20 text-gray-400">暂无竞猜记录</div>
       ) : (
         <div className="space-y-2">
           {entries.map((e) => (
@@ -45,20 +45,20 @@ export default function LeaderboardPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-gray-900 truncate">
-                  {e.nickname} {e.is_me && <span className="text-green-600 text-xs">(Ich)</span>}
+                  {e.nickname} {e.is_me && <span className="text-green-600 text-xs">（我）</span>}
                 </div>
                 <div className="text-xs text-gray-500">
-                  Tipps: {e.predictions_count} · Exakt: {e.exact_scores} · Richtig: {e.correct_outcomes}
+                  竞猜: {e.predictions_count} · 精确: {e.exact_scores} · 正确: {e.correct_outcomes}
                 </div>
                 {e.bonus_points > 0 && (
                   <div className="text-xs text-purple-500 font-medium">
-                    ⚡ {e.match_points} Tipp + {e.bonus_points} Bonus
+                    ⚡ {e.match_points} 竞猜 + {e.bonus_points} 附加
                   </div>
                 )}
               </div>
               <div className="text-right">
                 <div className="text-xl font-black text-green-600">{e.total_points}</div>
-                <div className="text-xs text-gray-400">Punkte</div>
+                <div className="text-xs text-gray-400">分</div>
               </div>
             </div>
           ))}
@@ -69,7 +69,7 @@ export default function LeaderboardPage() {
         onClick={load}
         className="mt-6 w-full py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition"
       >
-        Rangliste aktualisieren
+        刷新排行榜
       </button>
     </div>
   );

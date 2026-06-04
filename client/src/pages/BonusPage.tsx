@@ -4,9 +4,9 @@ import { flagUrl } from '../lib/flags';
 import { BonusQuestion, BonusPick } from '../types';
 
 const TYPE_CONFIG: Record<string, { icon: string; groupLabel: string; color: string }> = {
-  SEMI_FINALIST: { icon: '🏅', groupLabel: 'Halbfinalisten', color: 'blue' },
-  FINALIST:      { icon: '🥈', groupLabel: 'Finalisten',     color: 'purple' },
-  CHAMPION:      { icon: '🏆', groupLabel: 'Weltmeister',    color: 'yellow' },
+  SEMI_FINALIST: { icon: '🏅', groupLabel: '半决赛队伍', color: 'blue' },
+  FINALIST:      { icon: '🥈', groupLabel: '决赛队伍',   color: 'purple' },
+  CHAMPION:      { icon: '🏆', groupLabel: '世界杯冠军', color: 'yellow' },
 };
 
 export default function BonusPage() {
@@ -88,11 +88,11 @@ export default function BonusPage() {
     }
   }
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Lädt...</div>;
+  if (loading) return <div className="text-center py-20 text-gray-400">加载中...</div>;
   if (questions.length === 0) return (
     <div className="text-center py-20 text-gray-400 px-4">
       <div className="text-4xl mb-3">🎯</div>
-      <div className="text-sm">Keine Bonus-Fragen für diesen Raum</div>
+      <div className="text-sm">此房间暂无附加题</div>
     </div>
   );
 
@@ -109,8 +109,8 @@ export default function BonusPage() {
       {deadline && (
         <div className={`rounded-xl px-4 py-3 mb-4 text-sm text-center ${isOpen ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
           {isOpen
-            ? `⏳ Abgabe bis ${deadline.toLocaleString('de-DE', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })} (30 Min. vor dem ersten Spiel)`
-            : '🔒 Bonus-Abgabe geschlossen — das Turnier hat begonnen'}
+            ? `⏳ 截止时间 ${deadline.toLocaleString('zh-CN', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}（首场比赛前30分钟）`
+            : '🔒 附加题已截止 — 赛事已开始'}
         </div>
       )}
 
@@ -120,7 +120,7 @@ export default function BonusPage() {
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xl">{config.icon}</span>
             <h2 className="font-bold text-gray-800">{config.groupLabel}</h2>
-            <span className="text-xs text-gray-400 ml-auto">{qs[0].points_per_pick} Pkt. pro Treffer</span>
+            <span className="text-xs text-gray-400 ml-auto">每猜中+{qs[0].points_per_pick}分</span>
           </div>
 
           {qs.map(q => {
@@ -137,7 +137,7 @@ export default function BonusPage() {
                     )}
                   </div>
                   {pts !== null && (
-                    <span className={`text-sm font-bold ${pts > 0 ? 'text-green-600' : 'text-red-500'}`}>+{pts} Pkt.</span>
+                    <span className={`text-sm font-bold ${pts > 0 ? 'text-green-600' : 'text-red-500'}`}>+{pts} 分</span>
                   )}
                 </div>
 
@@ -178,7 +178,7 @@ export default function BonusPage() {
       {/* Summary + Submit */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
         <h3 className="font-bold text-gray-700 mb-3">
-          {isOpen ? 'Deine Auswahl' : '🔒 Eingereichte Auswahl'}
+          {isOpen ? '你的选择' : '🔒 已提交的选择'}
         </h3>
 
         {questions.map(q => {
@@ -193,7 +193,7 @@ export default function BonusPage() {
                         {t}
                       </span>
                     ))
-                  : <span className="text-xs text-gray-300">keine Auswahl</span>
+                  : <span className="text-xs text-gray-300">未选择</span>
                 }
               </div>
             </div>
@@ -212,22 +212,22 @@ export default function BonusPage() {
                     ? 'bg-green-500 text-white hover:bg-green-600 active:bg-green-700'
                     : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
             >
-              {submitting ? 'Wird gespeichert…' : hasChanges ? 'Auswahl abschicken' : 'Bereits gespeichert ✓'}
+              {submitting ? '保存中…' : hasChanges ? '提交选择' : '已保存 ✓'}
             </button>
           ) : (
             <button
               disabled
               className="w-full py-3 rounded-xl font-bold text-sm bg-gray-100 text-gray-400 cursor-not-allowed"
             >
-              🔒 Abgabe geschlossen
+              🔒 已截止
             </button>
           )}
 
           {submitResult === 'success' && (
-            <p className="text-center text-green-600 text-sm mt-2">Auswahl gespeichert!</p>
+            <p className="text-center text-green-600 text-sm mt-2">选择已保存！</p>
           )}
           {submitResult === 'error' && (
-            <p className="text-center text-red-500 text-sm mt-2">Fehler beim Speichern — bitte erneut versuchen.</p>
+            <p className="text-center text-red-500 text-sm mt-2">保存失败 — 请重试。</p>
           )}
         </div>
       </div>

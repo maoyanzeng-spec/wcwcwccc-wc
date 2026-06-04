@@ -1,0 +1,14 @@
+[phases.install]
+cmds = [
+  "cd server && npm install --no-workspaces",
+  "cd client && npm install --no-workspaces"
+]
+
+[phases.build]
+cmds = [
+  "cd client && npm run build",
+  "cd server && npm run build"
+]
+
+[start]
+cmd = "node server/dist/index.js"

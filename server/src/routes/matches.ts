@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import db from '../db/database';
 import { requireAuth, AuthRequest } from '../middleware/auth';
-import { processMatchResults, scoreBonusPicks } from '../services/scoring';
+import { processMatchResults, scoreBonusPicks, recalcUserTotal } from '../services/scoring';
 import { syncMatches } from '../services/footballApi';
 import { autoSeedIfEmpty } from '../services/autoSeed';
 import { backupDatabase } from '../services/backup';
@@ -76,6 +76,24 @@ router.post('/sync', async (req: AuthRequest, res: Response) => {
   }
   await syncMatches();
   res.json({ ok: true });
+});
+
+// POST /api/matches/recalc — idempotent full rebuild of every finished match +
+// all bonus picks + every user's total. Safety net if scores ever drift.
+router.post('/recalc', (req: AuthRequest, res: Response) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ error: 'Keine Berechtigung' });
+  }
+  const finished = db
+    .prepare("SELECT id FROM matches WHERE status = 'FINISHED' AND home_score IS NOT NULL")
+    .all() as { id: number }[];
+  for (const { id } of finished) processMatchResults(id);
+  for (const t of ['2026', '2022']) scoreBonusPicks(t);
+  // Recompute every user's total so nobody is left stale.
+  const users = db.prepare('SELECT id FROM users').all() as { id: number }[];
+  for (const { id } of users) recalcUserTotal(id);
+  res.json({ ok: true, recalculated: finished.length, users: users.length });
 });
 
 // PATCH /api/matches/:id — manually update result (admin)

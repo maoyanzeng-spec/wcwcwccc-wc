@@ -162,12 +162,17 @@ interface ApiMatch {
   score: { fullTime: { home: number | null; away: number | null } };
 }
 
-export async function syncMatches(): Promise<void> {
-  if (!API_KEY) {
-    console.log('No FOOTBALL_API_KEY set, skipping sync. Using existing data.');
-    return;
-  }
+const pairKey = (a: string, b: string) => [a, b].sort().join('|');
 
+// Dispatcher: football-data.org when a key is set (also auto-inserts knockout
+// fixtures), otherwise the keyless TheSportsDB fallback (updates scores only).
+export async function syncMatches(): Promise<void> {
+  if (API_KEY) return syncFromFootballData();
+  console.log('No FOOTBALL_API_KEY set — using keyless TheSportsDB fallback.');
+  return syncFromTheSportsDB();
+}
+
+async function syncFromFootballData(): Promise<void> {
   try {
     const res = await axios.get(`${API_BASE}/competitions/WC/matches?season=2026`, {
       headers: { 'X-Auth-Token': API_KEY },
@@ -200,7 +205,6 @@ export async function syncMatches(): Promise<void> {
 
     // Index seeded placeholders by unordered team pair (each pair is unique in the
     // group stage), so we can match regardless of which side the API lists as home.
-    const pairKey = (a: string, b: string) => [a, b].sort().join('|');
     const placeholders = new Map<string, { id: number; home: string }>();
     for (const p of db.prepare(
       "SELECT id, home_team, away_team FROM matches WHERE tournament = '2026' AND external_id IS NULL"
@@ -211,6 +215,9 @@ export async function syncMatches(): Promise<void> {
     db.exec('BEGIN');
     try {
       for (const m of matches) {
+        // Skip unresolved bracket slots (TBD knockout fixtures) — only insert/update
+        // once both real teams are known. This is how knockout phases auto-open.
+        if (!m.homeTeam?.name || !m.awayTeam?.name) continue;
         const home = translateTeam(m.homeTeam.name);
         const away = translateTeam(m.awayTeam.name);
         const stage = STAGE_MAP[m.stage] ?? m.stage;
@@ -260,6 +267,83 @@ export async function syncMatches(): Promise<void> {
     console.log(`Synced ${matches.length} matches from football-data.org`);
   } catch (err: any) {
     console.error('Football API sync failed:', err.message);
+  }
+}
+
+// ---- Keyless fallback: TheSportsDB (no API key required) -------------------
+// Updates scores/status on EXISTING fixtures by team-name pair (orientation-aware).
+// It does NOT insert new fixtures: TheSportsDB exposes intRound but no stage label,
+// so we can't reliably assign LAST_32/LAST_16/etc. Auto-inserting knockout fixtures
+// stays with football-data.org (keyed) or the admin PATCH endpoint.
+const SPORTSDB_KEY = process.env.THESPORTSDB_KEY ?? '3'; // '3' = free public key
+const SPORTSDB_WC_LEAGUE = '4429';
+
+interface SdbEvent {
+  strHomeTeam: string | null;
+  strAwayTeam: string | null;
+  intHomeScore: string | null;
+  intAwayScore: string | null;
+  strStatus: string | null;
+}
+
+function sdbStatus(s: string | null): string {
+  if (!s) return 'SCHEDULED';
+  if (['FT', 'AET', 'PEN', 'Match Finished'].includes(s)) return 'FINISHED';
+  if (/1H|2H|HT|ET|LIVE|Playing|In Play/i.test(s)) return 'IN_PLAY';
+  return 'SCHEDULED';
+}
+
+async function syncFromTheSportsDB(): Promise<void> {
+  try {
+    const url = `https://www.thesportsdb.com/api/v1/json/${SPORTSDB_KEY}/eventsseason.php?id=${SPORTSDB_WC_LEAGUE}&s=2026`;
+    const res = await axios.get(url);
+    const events: SdbEvent[] = res.data?.events ?? [];
+    if (events.length === 0) {
+      console.log('TheSportsDB returned no events — leaving existing data unchanged.');
+      return;
+    }
+
+    // Index existing 2026 fixtures by unordered team-name pair.
+    const byPair = new Map<string, { id: number; home: string }>();
+    for (const m of db.prepare("SELECT id, home_team, away_team FROM matches WHERE tournament = '2026'").all() as any[]) {
+      byPair.set(pairKey(m.home_team, m.away_team), { id: m.id, home: m.home_team });
+    }
+
+    // Only touch a row when something actually changed.
+    const update = db.prepare(`
+      UPDATE matches SET home_score = ?, away_score = ?, status = ?, updated_at = datetime('now')
+      WHERE id = ? AND (home_score IS NOT ? OR away_score IS NOT ? OR status IS NOT ?)
+    `);
+
+    const touched = new Set<number>();
+    db.exec('BEGIN');
+    try {
+      for (const e of events) {
+        if (!e.strHomeTeam || !e.strAwayTeam) continue;
+        const home = translateTeam(e.strHomeTeam);
+        const away = translateTeam(e.strAwayTeam);
+        const row = byPair.get(pairKey(home, away));
+        if (!row) continue; // keyless source never inserts
+        if (e.intHomeScore == null || e.intAwayScore == null) continue;
+
+        const status = sdbStatus(e.strStatus);
+        const sameOrder = row.home === home;
+        const hs = Number(sameOrder ? e.intHomeScore : e.intAwayScore);
+        const as = Number(sameOrder ? e.intAwayScore : e.intHomeScore);
+        update.run(hs, as, status, row.id, hs, as, status);
+        if (status === 'FINISHED') touched.add(row.id);
+      }
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      throw e;
+    }
+
+    for (const id of touched) processMatchResults(id);
+    scoreBonusPicks('2026');
+    console.log(`TheSportsDB (keyless): processed ${events.length} events, ${touched.size} newly finished.`);
+  } catch (err: any) {
+    console.error('TheSportsDB sync failed:', err.message);
   }
 }
 

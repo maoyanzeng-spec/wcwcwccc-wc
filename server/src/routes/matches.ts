@@ -1,9 +1,10 @@
 import { Router, Response } from 'express';
 import db from '../db/database';
 import { requireAuth, AuthRequest } from '../middleware/auth';
-import { processMatchResults } from '../services/scoring';
+import { processMatchResults, scoreBonusPicks } from '../services/scoring';
 import { syncMatches } from '../services/footballApi';
 import { autoSeedIfEmpty } from '../services/autoSeed';
+import { backupDatabase } from '../services/backup';
 
 const router = Router();
 
@@ -58,6 +59,8 @@ router.post('/seed', (req: AuthRequest, res: Response) => {
   if (adminKey !== process.env.ADMIN_KEY) {
     return res.status(403).json({ error: 'Keine Berechtigung' });
   }
+  // Back up before this destructive reseed so it's recoverable.
+  backupDatabase('pre-reseed');
   db.exec("DELETE FROM predictions WHERE match_id IN (SELECT id FROM matches WHERE tournament='2026')");
   db.exec("DELETE FROM matches WHERE tournament='2026'");
   autoSeedIfEmpty();
@@ -92,6 +95,9 @@ router.patch('/:id', (req: AuthRequest, res: Response) => {
 
   if ((status ?? 'FINISHED') === 'FINISHED') {
     processMatchResults(matchId);
+    // A finished semi-final/final may resolve bonus questions for that tournament.
+    const m = db.prepare('SELECT tournament FROM matches WHERE id = ?').get(matchId) as any;
+    if (m) scoreBonusPicks(m.tournament);
   }
 
   res.json({ ok: true });

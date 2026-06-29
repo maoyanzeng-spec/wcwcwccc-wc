@@ -1,55 +1,9 @@
 import { Router, Response } from 'express';
 import db from '../db/database';
 import { requireAuth, AuthRequest } from '../middleware/auth';
+import { getCorrectTeams, recalcUserTotal } from '../services/scoring';
 
 const router = Router();
-
-// Derive correct answers for a bonus question from match results
-// bracket_groups limits which teams count (e.g. only semi-finalists from those groups)
-function getCorrectTeams(type: string, tournament: string, bracketGroups?: string | null): string[] {
-  const inBracket = (team: string): boolean => {
-    if (!bracketGroups) return true;
-    const groups = bracketGroups.split(',');
-    const row = db.prepare(
-      `SELECT group_name FROM matches WHERE tournament = ? AND (home_team = ? OR away_team = ?) AND group_name IS NOT NULL LIMIT 1`
-    ).get(tournament, team, team) as any;
-    return row ? groups.includes(row.group_name) : false;
-  };
-
-  if (type === 'SEMI_FINALIST') {
-    const rows = db.prepare(
-      "SELECT home_team, away_team FROM matches WHERE tournament = ? AND stage = 'SEMI_FINALS' AND home_score IS NOT NULL"
-    ).all(tournament) as any[];
-    return rows.flatMap(r => [r.home_team, r.away_team]).filter(inBracket);
-  }
-  if (type === 'FINALIST') {
-    const row = db.prepare(
-      "SELECT home_team, away_team FROM matches WHERE tournament = ? AND stage = 'FINAL' AND home_score IS NOT NULL"
-    ).get(tournament) as any;
-    if (!row) return [];
-    return [row.home_team, row.away_team].filter(inBracket);
-  }
-  if (type === 'CHAMPION') {
-    const row = db.prepare(
-      "SELECT home_team, away_team, home_score, away_score, winner_team FROM matches WHERE tournament = ? AND stage = 'FINAL' AND home_score IS NOT NULL"
-    ).get(tournament) as any;
-    if (!row) return [];
-    if (row.winner_team) return [row.winner_team];
-    if (row.home_score > row.away_score) return [row.home_team];
-    if (row.away_score > row.home_score) return [row.away_team];
-  }
-  return [];
-}
-
-function recalcUserBonusPoints(userId: number) {
-  const matchPts = (db.prepare(
-    'SELECT COALESCE(SUM(points), 0) as t FROM predictions WHERE user_id = ? AND points IS NOT NULL'
-  ).get(userId) as any).t;
-  const bonusPts = (db.prepare(
-    'SELECT COALESCE(SUM(points), 0) as t FROM bonus_picks WHERE user_id = ? AND points IS NOT NULL'
-  ).get(userId) as any).t;
-  db.prepare('UPDATE users SET total_points = ? WHERE id = ?').run(matchPts + bonusPts, userId);
-}
 
 function getBonusDeadline(tournament: string): Date | null {
   const first = db.prepare(
@@ -141,7 +95,7 @@ router.post('/:id/picks', requireAuth, (req: AuthRequest, res: Response) => {
   }
   db.exec('COMMIT');
 
-  if (correctTeams.length > 0) recalcUserBonusPoints(userId);
+  if (correctTeams.length > 0) recalcUserTotal(userId);
 
   res.json({ ok: true, evaluated: correctTeams.length > 0 });
 });

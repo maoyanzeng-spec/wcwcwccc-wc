@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import db from '../db/database';
 import { requireAuth, AuthRequest } from '../middleware/auth';
-import { processMatchResults } from '../services/scoring';
+import { processMatchResults, scoreBonusPicks } from '../services/scoring';
 import { syncMatches } from '../services/footballApi';
 import { autoSeedIfEmpty } from '../services/autoSeed';
 import { backupDatabase } from '../services/backup';
@@ -95,6 +95,9 @@ router.patch('/:id', (req: AuthRequest, res: Response) => {
 
   if ((status ?? 'FINISHED') === 'FINISHED') {
     processMatchResults(matchId);
+    // A finished semi-final/final may resolve bonus questions for that tournament.
+    const m = db.prepare('SELECT tournament FROM matches WHERE id = ?').get(matchId) as any;
+    if (m) scoreBonusPicks(m.tournament);
   }
 
   res.json({ ok: true });

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import db from '../db/database';
-import { processMatchResults } from './scoring';
+import { processMatchResults, scoreBonusPicks } from './scoring';
 
 const API_BASE = 'https://api.football-data.org/v4';
 const API_KEY = process.env.FOOTBALL_API_KEY;
@@ -181,28 +181,65 @@ export async function syncMatches(): Promise<void> {
         home_score = excluded.home_score,
         away_score = excluded.away_score,
         status = excluded.status,
+        match_time = excluded.match_time,
         updated_at = datetime('now')
     `);
+
+    // Link an API match onto an existing seeded placeholder (external_id IS NULL)
+    // WITHOUT changing its home/away orientation — so already-placed predictions
+    // stay valid. Only attaches the external_id + result/crests/kickoff.
+    const link = db.prepare(`
+      UPDATE matches SET
+        external_id = ?, stage = ?,
+        home_team_short = ?, away_team_short = ?,
+        home_team_crest = ?, away_team_crest = ?,
+        match_time = ?, home_score = ?, away_score = ?, status = ?,
+        updated_at = datetime('now')
+      WHERE id = ?
+    `);
+
+    // Index seeded placeholders by unordered team pair (each pair is unique in the
+    // group stage), so we can match regardless of which side the API lists as home.
+    const pairKey = (a: string, b: string) => [a, b].sort().join('|');
+    const placeholders = new Map<string, { id: number; home: string }>();
+    for (const p of db.prepare(
+      "SELECT id, home_team, away_team FROM matches WHERE tournament = '2026' AND external_id IS NULL"
+    ).all() as any[]) {
+      placeholders.set(pairKey(p.home_team, p.away_team), { id: p.id, home: p.home_team });
+    }
 
     db.exec('BEGIN');
     try {
       for (const m of matches) {
-        upsert.run(
-          String(m.id),
-          STAGE_MAP[m.stage] ?? m.stage,
-          m.group ?? null,
-          m.matchday ?? null,
-          translateTeam(m.homeTeam.name),
-          translateTeam(m.awayTeam.name),
-          translateTeam(m.homeTeam.shortName),
-          translateTeam(m.awayTeam.shortName),
-          m.homeTeam.crest,
-          m.awayTeam.crest,
-          m.utcDate,
-          m.score.fullTime.home,
-          m.score.fullTime.away,
-          normalizeStatus(m.status)
-        );
+        const home = translateTeam(m.homeTeam.name);
+        const away = translateTeam(m.awayTeam.name);
+        const stage = STAGE_MAP[m.stage] ?? m.stage;
+        const status = normalizeStatus(m.status);
+
+        const ph = placeholders.get(pairKey(home, away));
+        if (ph) {
+          // Orient scores/crests/shorts to the placeholder's existing home/away.
+          const sameOrder = ph.home === home;
+          const hScore = sameOrder ? m.score.fullTime.home : m.score.fullTime.away;
+          const aScore = sameOrder ? m.score.fullTime.away : m.score.fullTime.home;
+          link.run(
+            String(m.id), stage,
+            translateTeam(sameOrder ? m.homeTeam.shortName : m.awayTeam.shortName),
+            translateTeam(sameOrder ? m.awayTeam.shortName : m.homeTeam.shortName),
+            sameOrder ? m.homeTeam.crest : m.awayTeam.crest,
+            sameOrder ? m.awayTeam.crest : m.homeTeam.crest,
+            m.utcDate, hScore, aScore, status, ph.id
+          );
+          placeholders.delete(pairKey(home, away)); // consume — don't reuse
+        } else {
+          upsert.run(
+            String(m.id), stage, m.group ?? null, m.matchday ?? null,
+            home, away,
+            translateTeam(m.homeTeam.shortName), translateTeam(m.awayTeam.shortName),
+            m.homeTeam.crest, m.awayTeam.crest,
+            m.utcDate, m.score.fullTime.home, m.score.fullTime.away, status
+          );
+        }
       }
       db.exec('COMMIT');
     } catch (e) {
@@ -212,11 +249,13 @@ export async function syncMatches(): Promise<void> {
 
     // Recalculate scores for newly finished matches
     const finished = db
-      .prepare("SELECT id FROM matches WHERE status = 'FINISHED' AND home_score IS NOT NULL")
+      .prepare("SELECT id FROM matches WHERE tournament = '2026' AND status = 'FINISHED' AND home_score IS NOT NULL")
       .all() as { id: number }[];
     for (const { id } of finished) {
       processMatchResults(id);
     }
+    // Award bonus points as knockout stages resolve (semi-finalist/finalist/champion).
+    scoreBonusPicks('2026');
 
     console.log(`Synced ${matches.length} matches from football-data.org`);
   } catch (err: any) {

@@ -3,7 +3,10 @@ import db from '../db/database';
 import { processMatchResults, scoreBonusPicks } from './scoring';
 
 const API_BASE = 'https://api.football-data.org/v4';
-const API_KEY = process.env.FOOTBALL_API_KEY;
+// Treat blank/placeholder values as "no key" so a leftover `your_key_here`
+// doesn't silently force (and break) the football-data path.
+const rawKey = (process.env.FOOTBALL_API_KEY ?? '').trim();
+const API_KEY = rawKey && rawKey !== 'your_key_here' ? rawKey : undefined;
 
 // Stage mapping from API to our internal names
 const STAGE_MAP: Record<string, string> = {
@@ -166,13 +169,19 @@ const pairKey = (a: string, b: string) => [a, b].sort().join('|');
 
 // Dispatcher: football-data.org when a key is set (also auto-inserts knockout
 // fixtures), otherwise the keyless TheSportsDB fallback (updates scores only).
+// If football-data returns nothing (bad key / plan without WC), fall back too.
 export async function syncMatches(): Promise<void> {
-  if (API_KEY) return syncFromFootballData();
-  console.log('No FOOTBALL_API_KEY set — using keyless TheSportsDB fallback.');
+  if (API_KEY) {
+    const count = await syncFromFootballData();
+    if (count > 0) return;
+    console.log('football-data.org returned no matches — falling back to keyless TheSportsDB.');
+  } else {
+    console.log('No valid FOOTBALL_API_KEY — using keyless TheSportsDB fallback.');
+  }
   return syncFromTheSportsDB();
 }
 
-async function syncFromFootballData(): Promise<void> {
+async function syncFromFootballData(): Promise<number> {
   try {
     const res = await axios.get(`${API_BASE}/competitions/WC/matches?season=2026`, {
       headers: { 'X-Auth-Token': API_KEY },
@@ -265,8 +274,10 @@ async function syncFromFootballData(): Promise<void> {
     scoreBonusPicks('2026');
 
     console.log(`Synced ${matches.length} matches from football-data.org`);
+    return matches.length;
   } catch (err: any) {
     console.error('Football API sync failed:', err.message);
+    return 0;
   }
 }
 

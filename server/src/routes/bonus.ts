@@ -22,31 +22,26 @@ router.get('/', requireAuth, (req: AuthRequest, res: Response) => {
   const questions = db.prepare('SELECT * FROM bonus_questions WHERE room_id = ? ORDER BY id').all(roomId) as any[];
   const picks = db.prepare('SELECT * FROM bonus_picks WHERE user_id = ?').all(userId) as any[];
 
-  // Build per-question team lists filtered by bracket_groups
+  // Build per-question team lists filtered by bracket_groups.
+  // Include the team crest so the UI can show it like the matches page does
+  // (crest first, then flag-by-code fallback). GROUP BY name collapses the
+  // home/away rows and MAX(crest) keeps a non-null crest if any match has one.
   const questionsWithTeams = questions.map((q: any) => {
-    let teamQuery: string;
-    const params: any[] = [];
-    if (q.bracket_groups) {
-      const groups = q.bracket_groups.split(',').map((g: string) => `'${g}'`).join(',');
-      teamQuery = `
-        SELECT DISTINCT home_team AS name, home_team_short AS short FROM matches
-        WHERE tournament = ? AND group_name IN (${groups})
-        UNION
-        SELECT DISTINCT away_team AS name, away_team_short AS short FROM matches
-        WHERE tournament = ? AND group_name IN (${groups})
-        ORDER BY name ASC
-      `;
-      params.push(room.tournament, room.tournament);
-    } else {
-      teamQuery = `
-        SELECT DISTINCT home_team AS name, home_team_short AS short FROM matches WHERE tournament = ?
-        UNION
-        SELECT DISTINCT away_team AS name, away_team_short AS short FROM matches WHERE tournament = ?
-        ORDER BY name ASC
-      `;
-      params.push(room.tournament, room.tournament);
-    }
-    return { ...q, teams: db.prepare(teamQuery).all(...params) };
+    const groupFilter = q.bracket_groups
+      ? `AND group_name IN (${q.bracket_groups.split(',').map((g: string) => `'${g}'`).join(',')})`
+      : '';
+    const teamQuery = `
+      SELECT name, MAX(short) AS short, MAX(crest) AS crest FROM (
+        SELECT home_team AS name, home_team_short AS short, home_team_crest AS crest
+          FROM matches WHERE tournament = ? ${groupFilter}
+        UNION ALL
+        SELECT away_team AS name, away_team_short AS short, away_team_crest AS crest
+          FROM matches WHERE tournament = ? ${groupFilter}
+      )
+      GROUP BY name
+      ORDER BY name ASC
+    `;
+    return { ...q, teams: db.prepare(teamQuery).all(room.tournament, room.tournament) };
   });
 
   const deadline = room.tournament === '2022' ? null : getBonusDeadline(room.tournament);

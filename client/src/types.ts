@@ -45,6 +45,7 @@ export interface BonusPick {
 export interface BonusTeam {
   name: string;
   short: string | null;
+  crest?: string | null;
 }
 
 export interface LeaderboardEntry {

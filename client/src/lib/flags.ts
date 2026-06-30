@@ -5,7 +5,7 @@ const ISO2: Record<string, string> = {
   CAN: 'ca', CIV: 'ci', CMR: 'cm', COD: 'cd', COL: 'co',
   CPV: 'cv', CRC: 'cr', CRO: 'hr', CUW: 'cw', CZE: 'cz',
   DEN: 'dk',
-  ECU: 'ec', EGY: 'eg', ENG: 'gb-eng',
+  ECU: 'ec', EGY: 'eg', ENG: 'gb-eng', ESP: 'es',
   FRA: 'fr',
   GER: 'de', GHA: 'gh',
   HAI: 'ht',

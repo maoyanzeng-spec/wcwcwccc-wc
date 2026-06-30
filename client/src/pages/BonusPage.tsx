@@ -161,7 +161,7 @@ export default function BonusPage() {
                             !isOpen    ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed' :
                                          'border-gray-200 hover:border-green-400 text-gray-700'}`}
                       >
-                        <img src={flagUrl(team.short) ?? undefined} alt={team.name} className="w-8 h-5 object-contain mb-1" />
+                        <img src={team.crest ?? flagUrl(team.short) ?? undefined} alt={team.name} className="w-8 h-5 object-contain mb-1" />
                         <span className="leading-tight">{team.name}</span>
                         {isCorrect && <span className="text-green-600 font-bold text-xs">✓</span>}
                         {isWrong   && <span className="text-red-400 text-xs">✗</span>}
